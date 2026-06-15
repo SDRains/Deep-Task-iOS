@@ -1,0 +1,35 @@
+{
+  "fill" : "automatic",
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "hidden" : false,
+          "image-name" : "sdrains_a_simple_iOS_app_icon_for_a_productivity_app_called_D_a8558cc9-c901-4837-9ab5-51c5365f83cf_0.png",
+          "name" : "sdrains_a_simple_iOS_app_icon_for_a_productivity_app_called_D_a8558cc9-c901-4837-9ab5-51c5365f83cf_0",
+          "position" : {
+            "scale" : 1.65,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.6
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.2
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

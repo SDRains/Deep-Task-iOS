@@ -83,6 +83,10 @@ struct CalendarWidget: View {
                         )
                         .onTapGesture {
                             selectedDate = date
+                            AnalyticsService.shared.track("Calendar Date Selected", properties: [
+                                "hasCompletedTasks": persistenceManager.getTasksCompletedOn(date: date).count > 0,
+                                "isFutureDate": date > Date()
+                            ])
                         }
                     }
                 }

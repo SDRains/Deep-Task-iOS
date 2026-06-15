@@ -30,39 +30,54 @@ struct AddScheduleBlockView: View {
          editingBlock: ScheduleBlock? = nil,
          initialScope: ResolvedScope = .everyday,
          viewedDate: Date = Date()) {
-        // Assign non-@State stored properties first.
         self._isPresented = isPresented
         self.editingBlock = editingBlock
 
         let calendar = Calendar.current
         let viewedWeekday = calendar.component(.weekday, from: viewedDate)
 
-        // Then assign @State properties (SDK 27 @State macro: direct assignment, no initial value).
+        // Compute initial values, then seed @State via its backing store using
+        // State(initialValue:). This is the standard pattern that works on
+        // iOS 18+ and avoids the SDK 27 @State-macro direct-assignment pitfalls.
+        let initialTitle: String
+        let initialScopeType: ScheduleScopeType
+        let initialWeekdays: Set<Int>
+        let initialOneOffDate: Date
+        let initialStart: Int
+        let initialEnd: Int
+
         if let block = editingBlock {
-            self.title = block.title
-            self.scopeType = block.scopeType
-            self.selectedWeekdays = Set(block.weekdays ?? [viewedWeekday])
-            self.oneOffDate = block.date ?? viewedDate
-            self.startMinutes = block.startMinutes
-            self.endMinutes = block.endMinutes
+            initialTitle = block.title
+            initialScopeType = block.scopeType
+            initialWeekdays = Set(block.weekdays ?? [viewedWeekday])
+            initialOneOffDate = block.date ?? viewedDate
+            initialStart = block.startMinutes
+            initialEnd = block.endMinutes
         } else {
-            self.title = ""
-            self.scopeType = initialScope.type
+            initialTitle = ""
+            initialScopeType = initialScope.type
             switch initialScope {
             case .weekday(let weekday):
-                self.selectedWeekdays = [weekday]
+                initialWeekdays = [weekday]
             default:
-                self.selectedWeekdays = [viewedWeekday]
+                initialWeekdays = [viewedWeekday]
             }
             if case .oneOff(let date) = initialScope {
-                self.oneOffDate = date
+                initialOneOffDate = date
             } else {
-                self.oneOffDate = viewedDate
+                initialOneOffDate = viewedDate
             }
-            self.startMinutes = 9 * 60   // 9:00 AM
-            self.endMinutes = 10 * 60    // 10:00 AM
+            initialStart = 9 * 60   // 9:00 AM
+            initialEnd = 10 * 60    // 10:00 AM
         }
-        self.showOverlapAlert = false
+
+        self._title = State(initialValue: initialTitle)
+        self._scopeType = State(initialValue: initialScopeType)
+        self._selectedWeekdays = State(initialValue: initialWeekdays)
+        self._oneOffDate = State(initialValue: initialOneOffDate)
+        self._startMinutes = State(initialValue: initialStart)
+        self._endMinutes = State(initialValue: initialEnd)
+        self._showOverlapAlert = State(initialValue: false)
     }
 
     private var isValid: Bool {
@@ -152,6 +167,11 @@ struct AddScheduleBlockView: View {
                 if endMinutes <= newStart {
                     endMinutes = min(newStart + 15, 24 * 60)
                 }
+            }
+            .onAppear {
+                AnalyticsService.shared.trackScreen(.addScheduleBlock, properties: [
+                    "isEdit": editingBlock != nil
+                ])
             }
         }
     }
@@ -263,10 +283,20 @@ struct AddScheduleBlockView: View {
             return
         }
 
+        let eventProperties: [String: Any] = [
+            "scopeType": candidate.scopeType.rawValue,
+            "durationMinutes": candidate.durationMinutes,
+            "startMinutes": candidate.startMinutes,
+            "endMinutes": candidate.endMinutes,
+            "weekdayCount": candidate.weekdays?.count ?? 0
+        ]
+
         if editingBlock == nil {
             scheduleManager.addBlock(candidate)
+            AnalyticsService.shared.track("Schedule Block Created", properties: eventProperties)
         } else {
             scheduleManager.updateBlock(candidate)
+            AnalyticsService.shared.track("Schedule Block Updated", properties: eventProperties)
         }
 
         isPresented = false

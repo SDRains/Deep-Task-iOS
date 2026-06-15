@@ -41,6 +41,11 @@ struct MomentumPage: View {
             .padding(.horizontal)
             .background (Color(.systemGray6))
             .navigationTitle("Momentum")
+            .onAppear {
+                AnalyticsService.shared.trackScreen(.momentum, properties: [
+                    "completedTaskCount": persistenceManager.getCompletedTasks().count
+                ])
+            }
         }
     }
 }

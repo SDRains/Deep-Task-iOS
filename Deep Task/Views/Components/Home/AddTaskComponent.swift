@@ -126,6 +126,11 @@ struct AddTaskView: View {
             .onTapGesture {
                 hideKeyboard()
             }
+            .onAppear {
+                AnalyticsService.shared.trackScreen(.addTask, properties: [
+                    "isScheduleBlockTask": scheduleBlockID != nil
+                ])
+            }
         }
     }
 
@@ -231,6 +236,12 @@ struct AddTaskView: View {
 
         // Save using persistence manager
         persistenceManager.addTask(newMainTask)
+
+        AnalyticsService.shared.track("Task Created", properties: [
+            "subtaskCount": validTasks.count,
+            "taskDuration": durationInMinutes,
+            "isScheduleBlockTask": scheduleBlockID != nil
+        ])
 
         // Close the sheet
         isPresented = false

@@ -49,7 +49,19 @@ struct SchedulePage: View {
 
                 // Scope selector (only meaningful when more than General is available).
                 if availableScopes.count > 1 {
-                    Picker("Schedule", selection: $selectedScope) {
+                    Picker("Schedule", selection: Binding(
+                        get: { selectedScope },
+                        set: { newScope in
+                            // Log only genuine user-driven scope switches, not the
+                            // programmatic reconciliation in reconcileScope().
+                            if newScope != selectedScope {
+                                AnalyticsService.shared.track("Schedule Scope Changed", properties: [
+                                    "scopeType": newScope.type.rawValue
+                                ])
+                            }
+                            selectedScope = newScope
+                        }
+                    )) {
                         ForEach(availableScopes, id: \.self) { scope in
                             Text(scope.label(for: selectedDate)).tag(scope)
                         }
@@ -93,7 +105,13 @@ struct SchedulePage: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
-            .onAppear { reconcileScope() }
+            .onAppear {
+                reconcileScope()
+                AnalyticsService.shared.trackScreen(.schedule, properties: [
+                    "visibleBlockCount": visibleBlocks.count,
+                    "scopeType": selectedScope.type.rawValue
+                ])
+            }
             .onChange(of: selectedDate) { _, _ in reconcileScope() }
             .onChange(of: scheduleManager.scheduleCollection.blocks.count) { _, _ in reconcileScope() }
         }
@@ -173,6 +191,9 @@ struct SchedulePage: View {
     private func changeDay(by days: Int) {
         if let newDate = calendar.date(byAdding: .day, value: days, to: selectedDate) {
             selectedDate = calendar.startOfDay(for: newDate)
+            AnalyticsService.shared.track("Schedule Date Changed", properties: [
+                "direction": days >= 0 ? "next" : "previous"
+            ])
         }
     }
 

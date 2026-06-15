@@ -90,6 +90,11 @@ struct ScheduleBlockDetailPage: View {
                                 )
                             }
                             .buttonStyle(PlainButtonStyle())
+                            .simultaneousGesture(TapGesture().onEnded {
+                                var props = AnalyticsService.shared.taskProperties(mainTask)
+                                props["source"] = "Schedule Block"
+                                AnalyticsService.shared.track("Task Opened", properties: props)
+                            })
                             .taskDeleteSwipe { taskToDelete = mainTask }
                         }
                     }
@@ -101,10 +106,20 @@ struct ScheduleBlockDetailPage: View {
         }
         .taskSwipeContainer()
         .confirmTaskDeletion($taskToDelete) { task in
+            var props = AnalyticsService.shared.taskProperties(task)
+            props["source"] = "Schedule Block"
+            AnalyticsService.shared.track("Task Deleted", properties: props)
             persistenceManager.deleteTask(withId: task.id)
         }
         .navigationTitle("Block")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            AnalyticsService.shared.trackScreen(.scheduleBlockDetail, properties: [
+                "durationMinutes": block.durationMinutes,
+                "scopeType": block.scopeType.rawValue,
+                "taskCount": blockTasks.count
+            ])
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -126,6 +141,11 @@ struct ScheduleBlockDetailPage: View {
         }
         .alert("Delete this block?", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
+                AnalyticsService.shared.track("Schedule Block Deleted", properties: [
+                    "durationMinutes": block.durationMinutes,
+                    "scopeType": block.scopeType.rawValue,
+                    "taskCount": blockTasks.count
+                ])
                 scheduleManager.deleteBlock(withId: blockID)
                 dismiss()
             }

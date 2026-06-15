@@ -49,6 +49,9 @@ struct WeekAtAGlanceView: View {
                 VStack(spacing: 12) {
                     ForEach(weekDays, id: \.self) { day in
                         Button {
+                            AnalyticsService.shared.track("Week Day Selected", properties: [
+                                "isToday": calendar.isDateInToday(day)
+                            ])
                             onSelectDay(calendar.startOfDay(for: day))
                             dismiss()
                         } label: {
@@ -61,6 +64,7 @@ struct WeekAtAGlanceView: View {
             }
         }
         .background(Color(.systemGray6))
+        .onAppear { AnalyticsService.shared.trackScreen(.weekAtAGlance) }
     }
 
     // MARK: - Header

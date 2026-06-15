@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6857EFEB2FE072B800066A1A /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = 6857EFEA2FE072B800066A1A /* Mixpanel */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		68FF18A02E5F73A200AF06FE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6857EFEB2FE072B800066A1A /* Mixpanel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = "Deep Task";
 			packageProductDependencies = (
+				6857EFEA2FE072B800066A1A /* Mixpanel */,
 			);
 			productName = "Deep Task";
 			productReference = 68FF188D2E5F73A100AF06FE /* Deep Task.app */;
@@ -195,6 +201,9 @@
 			);
 			mainGroup = 68FF18842E5F73A100AF06FE;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6857EFE92FE072B800066A1A /* XCRemoteSwiftPackageReference "mixpanel-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 68FF188E2E5F73A100AF06FE /* Products */;
 			projectDirPath = "";
@@ -582,6 +591,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6857EFE92FE072B800066A1A /* XCRemoteSwiftPackageReference "mixpanel-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mixpanel/mixpanel-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.4.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6857EFEA2FE072B800066A1A /* Mixpanel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6857EFE92FE072B800066A1A /* XCRemoteSwiftPackageReference "mixpanel-swift" */;
+			productName = Mixpanel;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 68FF18852E5F73A100AF06FE /* Project object */;
 }

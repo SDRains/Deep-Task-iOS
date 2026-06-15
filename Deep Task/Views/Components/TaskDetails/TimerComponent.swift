@@ -21,15 +21,16 @@ struct TimerComponent: View {
     @State private var showCancelAlert = false
     @State private var showTimeUpAlert = false
     @State private var userIsReviewingTask = false // This way when elapsedTime == totalTime, it won't continue showing the alerts
+    @State private var hasLoggedCompletion = false // Ensures "Timer Completed" is logged only once per session
 
     init(totalTime: TimeInterval,
          initialElapsedSeconds: Int = 0,
          onPersist: @escaping (Int) -> Void = { _ in }) {
-        // Assign non-@State stored properties first, then the @State property.
         self.totalTime = totalTime
         self.initialElapsedSeconds = initialElapsedSeconds
         self.onPersist = onPersist
-        self.elapsedTime = TimeInterval(min(max(initialElapsedSeconds, 0), Int(totalTime)))
+        // Seed @State via its backing store (standard iOS 18+ pattern).
+        self._elapsedTime = State(initialValue: TimeInterval(min(max(initialElapsedSeconds, 0), Int(totalTime))))
     }
 
     var remainingTime: TimeInterval {
@@ -96,14 +97,34 @@ struct TimerComponent: View {
             HStack(spacing: 16) {
                 if remainingTime == 0 {
                     // Session complete — allow starting a fresh one.
-                    Button(action: { startOver() }) { primaryLabel("Start Over") }
+                    Button(action: {
+                        AnalyticsService.shared.track("Timer Reset", properties: [
+                            "previousElapsedSeconds": Int(elapsedTime)
+                        ])
+                        startOver()
+                    }) { primaryLabel("Start Over") }
                 } else if elapsedTime == 0 {
                     // Fresh, unstarted timer.
-                    Button(action: { toggleBreak() }) { primaryLabel("Start Task") }
+                    Button(action: {
+                        AnalyticsService.shared.track("Timer Started", properties: [
+                            "totalSeconds": Int(totalTime)
+                        ])
+                        toggleBreak()
+                    }) { primaryLabel("Start Task") }
                 } else if isPaused {
                     // Saved/paused session — resume where we left off or restart.
-                    Button(action: { toggleBreak() }) { primaryLabel("Resume") }
-                    Button(action: { startOver() }) { secondaryLabel("Start Over") }
+                    Button(action: {
+                        AnalyticsService.shared.track("Timer Resumed", properties: [
+                            "resumedFromSeconds": Int(elapsedTime)
+                        ])
+                        toggleBreak()
+                    }) { primaryLabel("Resume") }
+                    Button(action: {
+                        AnalyticsService.shared.track("Timer Reset", properties: [
+                            "previousElapsedSeconds": Int(elapsedTime)
+                        ])
+                        startOver()
+                    }) { secondaryLabel("Start Over") }
                 } else {
                     // Running.
                     Button(action: { toggleBreak() }) { primaryLabel("Pause") }
@@ -131,6 +152,10 @@ struct TimerComponent: View {
             Button("Pause Timer") {
                 isPaused = true
                 persist()
+                AnalyticsService.shared.track("Timer Paused", properties: [
+                    "elapsedSeconds": Int(elapsedTime),
+                    "remainingSeconds": Int(remainingTime)
+                ])
             }
         } message: {
             Text("Avoid breaks during your deep work session and stay in the focus zone.")
@@ -142,6 +167,9 @@ struct TimerComponent: View {
                 isPaused = false // confirm timer keeps running
             }
             Button("Cancel Task") {
+                AnalyticsService.shared.track("Timer Cancelled", properties: [
+                    "elapsedSeconds": Int(elapsedTime)
+                ])
                 isPaused = true
                 elapsedTime = 0
                 persist()
@@ -224,8 +252,15 @@ struct TimerComponent: View {
             }
 
             if (elapsedTime == totalTime && !userIsReviewingTask) { // Timer has completed
+                if !hasLoggedCompletion {
+                    hasLoggedCompletion = true
+                    AnalyticsService.shared.track("Timer Completed", properties: [
+                        "totalSeconds": Int(totalTime)
+                    ])
+                }
                 showTimeUpAlert = true
             }
+
         }
     }
 

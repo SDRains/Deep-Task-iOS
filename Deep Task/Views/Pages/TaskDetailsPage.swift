@@ -106,6 +106,9 @@ struct TaskDetailsPage: View {
                 Button("Add", role: .none) {
                     mainTask.tasks.append(TaskItem(title: newSubtaskText, completed: false))
                     persistenceManager.updateTask(mainTask)
+                    AnalyticsService.shared.track("Subtask Added", properties: [
+                        "subtaskCount": mainTask.tasks.count
+                    ])
                     showAddNewTaskAlert = false
                     newSubtaskText = "" // Clear the text field after adding
                 }
@@ -116,6 +119,9 @@ struct TaskDetailsPage: View {
             .alert("Are you sure?", isPresented: $showDeleteMainTaskAlert) {
                 Button("Delete", role: .destructive) {
                     showDeleteMainTaskAlert = false
+                    var props = AnalyticsService.shared.taskProperties(mainTask)
+                    props["source"] = "Task Details"
+                    AnalyticsService.shared.track("Task Deleted", properties: props)
                     persistenceManager.deleteTask(withId: mainTask.id)
                     dismiss()
                 }
@@ -125,6 +131,8 @@ struct TaskDetailsPage: View {
             .onAppear {
                 // Disable the idle timer when the view appears
                 UIApplication.shared.isIdleTimerDisabled = true
+                AnalyticsService.shared.trackScreen(.taskDetails,
+                                                    properties: AnalyticsService.shared.taskProperties(mainTask))
             }
             .onDisappear {
                 // Re-enable the idle timer when the view disappears

@@ -12,6 +12,7 @@ import SwiftUI
 // `onGetStarted`, which the parent uses to persist that onboarding is done.
 struct OnboardingView: View {
     var onGetStarted: () -> Void
+    @State private var showPrivacy = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,10 +60,17 @@ struct OnboardingView: View {
             }
 
             // Pinned call-to-action
-            getStartedButton
+            VStack(spacing: 8) {
+                getStartedButton
+                privacyLink
+            }
         }
         .background(Color(.systemGray6))
         //.background(AppTheme.backgroundGradient.ignoresSafeArea())
+        .onAppear { AnalyticsService.shared.trackScreen(.onboarding) }
+        .sheet(isPresented: $showPrivacy) {
+            PrivacyPolicyView()
+        }
     }
 
     // MARK: - Subviews
@@ -97,7 +105,10 @@ struct OnboardingView: View {
     }
 
     private var getStartedButton: some View {
-        Button(action: onGetStarted) {
+        Button(action: {
+            AnalyticsService.shared.track("Onboarding Completed")
+            onGetStarted()
+        }) {
             Text("Get Started")
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.white)
@@ -109,8 +120,19 @@ struct OnboardingView: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 12)
-        .padding(.bottom, 8)
         //.background(.ultraThinMaterial)
+    }
+
+    private var privacyLink: some View {
+        Button {
+            showPrivacy = true
+        } label: {
+            Text("How we handle your privacy")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.secondary)
+                .underline()
+        }
+        .padding(.bottom, 12)
     }
 }
 

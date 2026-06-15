@@ -12,6 +12,14 @@ import CoreData
 struct Deep_TaskApp: App {
     let persistenceController = PersistenceController.shared
 
+    init() {
+        // Initialize analytics and fire a single test event to verify the
+        // Mixpanel connection. We'll expand instrumentation after confirming.
+        AnalyticsService.shared.start()
+        AnalyticsService.shared.track("App Launched")
+        AnalyticsService.shared.flush()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

@@ -68,11 +68,21 @@ struct CompletedPage: View {
             }
             .taskSwipeContainer()
             .confirmTaskDeletion($taskToDelete) { task in
+                var props = AnalyticsService.shared.taskProperties(task)
+                props["source"] = "Completed"
+                AnalyticsService.shared.track("Task Deleted", properties: props)
                 persistenceManager.deleteTask(withId: task.id)
             }
 //            .background(AppTheme.backgroundGradient.ignoresSafeArea())
             .background(Color(.systemGray6))
             .navigationTitle("Completed")
+            .onAppear {
+                AnalyticsService.shared.trackScreen(.completed, properties: [
+                    "completedToday": completedToday,
+                    "completedThisWeek": completedThisWeek,
+                    "totalCompleted": totalCompleted
+                ])
+            }
         }
     }
 
@@ -112,6 +122,11 @@ struct CompletedPage: View {
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
+                .simultaneousGesture(TapGesture().onEnded {
+                    var props = AnalyticsService.shared.taskProperties(mainTask)
+                    props["source"] = "Completed"
+                    AnalyticsService.shared.track("Task Opened", properties: props)
+                })
                 .taskDeleteSwipe { taskToDelete = mainTask }
             }
         }

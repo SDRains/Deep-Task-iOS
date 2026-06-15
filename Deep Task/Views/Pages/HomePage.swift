@@ -11,6 +11,7 @@ struct HomePage: View {
     @State private var showAddTask = false
     @ObservedObject private var persistenceManager = TaskPersistenceManager.shared
     @State private var taskToDelete: MainTask?
+    @State private var showPrivacy = false
     //@State private var selectedTab: TabType = .tasks
 
     enum TabType {
@@ -44,12 +45,26 @@ struct HomePage: View {
             }
             .taskSwipeContainer()
             .confirmTaskDeletion($taskToDelete) { task in
+                var props = AnalyticsService.shared.taskProperties(task)
+                props["source"] = "Home"
+                AnalyticsService.shared.track("Task Deleted", properties: props)
                 persistenceManager.deleteTask(withId: task.id)
             }
             //.background(AppTheme.backgroundGradient.ignoresSafeArea())
             .background(Color(.systemGray6))
             .navigationTitle("Deep Task")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        showPrivacy = true
+                    }) {
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.subheadline)
+                            .foregroundStyle(AppTheme.accent)
+                    }
+                    .accessibilityLabel("Privacy")
+                }
+
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: {
                         showAddTask = true
@@ -62,6 +77,15 @@ struct HomePage: View {
             }
             .sheet(isPresented: $showAddTask) {
                 AddTaskView(isPresented: $showAddTask)
+            }
+            .sheet(isPresented: $showPrivacy) {
+                PrivacyPolicyView()
+            }
+            .onAppear {
+                AnalyticsService.shared.trackScreen(.home, properties: [
+                    "activeTaskCount": persistenceManager.getActiveTasks().count,
+                    "currentStreak": persistenceManager.getCurrentStreak()
+                ])
             }
         }
     }
@@ -91,6 +115,11 @@ struct HomePage: View {
                         )
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .simultaneousGesture(TapGesture().onEnded {
+                        var props = AnalyticsService.shared.taskProperties(mainTask)
+                        props["source"] = "Home"
+                        AnalyticsService.shared.track("Task Opened", properties: props)
+                    })
                     .taskDeleteSwipe { taskToDelete = mainTask }
                 }
             }

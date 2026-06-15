@@ -52,13 +52,22 @@ struct TodoItemRow: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             // Update the task directly in the binding
             mainTask.tasks[taskIndex].completed.toggle()
-            
+
+            AnalyticsService.shared.track("Subtask Toggled", properties: [
+                "isNowCompleted": mainTask.tasks[taskIndex].completed,
+                "completedSubtaskCount": mainTask.tasks.filter { $0.completed }.count,
+                "subtaskCount": mainTask.tasks.count
+            ])
+
             // Debounce the save operation to avoid rapid successive saves
             persistenceManager.debouncedUpdateTask(mainTask)
-            
+
             // Check if all tasks are complete
             if (isMainTaskComplete(mainTask: mainTask)) {
                 showTaskCompleteAlert = true
+                AnalyticsService.shared.track("All Subtasks Completed", properties: [
+                    "subtaskCount": mainTask.tasks.count
+                ])
                 mainTask.dateCompleted = Date()
                 persistenceManager.updateTask(mainTask)
             } else { // Ensures dateCompleted is nil if not all tasks completed
